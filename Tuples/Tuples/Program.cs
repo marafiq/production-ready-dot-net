@@ -1,36 +1,43 @@
 ﻿using System.Diagnostics;
 
+
+var bookService = new BookService();
+//get me max, min prices of all books belong to a category.
+var thrillerPriceAggregates = bookService.CalculatePriceAggregatesBy(BookCategory.Thriller);
 unsafe
 {
-    var bookService = new BookService();
-    //get me max, min prices of all books belong to a category.
-    var thrillerPriceAggregates = bookService.CalculatePriceAggregatesBy(BookCategory.Thriller);
+    var size = sizeof((double, double));
     Console.WriteLine(
-        $"Price aggregates of Thriller are (Max,Min): {thrillerPriceAggregates}  And size of tuple is {sizeof((double, double))} bytes");
+        $"Price aggregates of Thriller are (Max,Min): {thrillerPriceAggregates}  And size of tuple is {size} bytes");
     Console.WriteLine("I have 100 books. Lets measure by using old StopWatch");
-    var stopWatch = new Stopwatch();
-    stopWatch.Start();
-    var booksWithAggregatesByCategory = bookService.UseAnonymousToGroupBooksWithAggregatesByCategory();
-    foreach (var bookGroup in booksWithAggregatesByCategory)
-    {
-        Console.WriteLine($"Anonymous Type Group : {bookGroup} ");
-    }
-    Console.WriteLine($"Time Spent: {stopWatch.ElapsedTicks} ticks");
-    stopWatch.Restart();
-    foreach (var valueTuple in bookService.UseValueTuplesToGroupBooksWithAggregatesByCategory())
-    {
-        Console.WriteLine($"Value Tuple Group: {valueTuple}");
-    }
-    Console.WriteLine($"Time Spent: {stopWatch.ElapsedTicks} ticks");
-    stopWatch.Restart();
-    foreach (var refTuple in bookService.UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory())
-    {
-        Console.WriteLine($"Refence Tuple Group: {refTuple}");
-    }
-    Console.WriteLine($"Time Spent: {stopWatch.ElapsedTicks} ticks");
-    stopWatch.Restart();
-    Console.WriteLine("Hello, World! I am tuples.");
 }
+
+var stopWatch = new Stopwatch();
+stopWatch.Start();
+var booksWithAggregatesByCategory = bookService.UseAnonymousToGroupBooksWithAggregatesByCategory();
+foreach (var bookGroup in booksWithAggregatesByCategory)
+{
+    Console.WriteLine($"Anonymous Type Group : {bookGroup} ");
+}
+
+Console.WriteLine($"Time Spent: {stopWatch.ElapsedTicks} ticks");
+stopWatch.Restart();
+foreach (var valueTuple in bookService.UseValueTuplesToGroupBooksWithAggregatesByCategory())
+{
+    Console.WriteLine($"Value Tuple Group: {valueTuple}");
+}
+
+Console.WriteLine($"Time Spent: {stopWatch.ElapsedTicks} ticks");
+stopWatch.Restart();
+foreach (var refTuple in bookService.UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory())
+{
+    Console.WriteLine($"Refence Tuple Group: {refTuple}");
+}
+
+Console.WriteLine($"Time Spent: {stopWatch.ElapsedTicks} ticks");
+stopWatch.Restart();
+Console.WriteLine("Hello, World! I am tuples.");
+
 
 public class BookService
 {
@@ -55,9 +62,10 @@ public class BookService
                 var groupedBooks = books.ToList();
                 return new
                 {
-                    Category = category, MinPrice = groupedBooks.Min(b => b.Price),
-                    MaxPrice = groupedBooks.Max(b => b.Price),
+                    Category = category, 
+                    MinPrice = groupedBooks.Min(b => b.Price),
                     AvgPrice = groupedBooks.Average(b => b.Price),
+                    MaxPrice = groupedBooks.Max(b => b.Price),
                     Books = groupedBooks
                 };
             });
@@ -73,9 +81,10 @@ public class BookService
             {
                 var groupedBooks = books.ToList();
                 return (
-                    Category: category, MinPrice: groupedBooks.Min(b => b.Price),
-                    MaxPrice: groupedBooks.Max(b => b.Price),
+                    Category: category, 
+                    MinPrice: groupedBooks.Min(b => b.Price),
                     AvgPrice: groupedBooks.Average(b => b.Price),
+                    MaxPrice: groupedBooks.Max(b => b.Price),
                     Books: groupedBooks
                 );
             });
@@ -91,9 +100,10 @@ public class BookService
             {
                 var groupedBooks = books.ToList();
                 return Tuple.Create(
-                    category, groupedBooks.Min(b => b.Price),
-                    groupedBooks.Max(b => b.Price),
+                    category, 
+                    groupedBooks.Min(b => b.Price),
                     groupedBooks.Average(b => b.Price),
+                    groupedBooks.Max(b => b.Price),
                     groupedBooks
                 );
             });
