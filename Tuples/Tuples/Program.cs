@@ -1,26 +1,34 @@
-﻿unsafe
+﻿using System.Diagnostics;
+
+unsafe
 {
     var bookService = new BookService();
     //get me max, min prices of all books belong to a category.
     var thrillerPriceAggregates = bookService.CalculatePriceAggregatesBy(BookCategory.Thriller);
     Console.WriteLine(
-        $"Price aggregates of Thriller are (Max,Min): {thrillerPriceAggregates}  And size of tuple is {sizeof((BookCategory, double, double))} bytes");
+        $"Price aggregates of Thriller are (Max,Min): {thrillerPriceAggregates}  And size of tuple is {sizeof((double, double))} bytes");
+    Console.WriteLine("I have 100 books. Lets measure by using old StopWatch");
+    var stopWatch = new Stopwatch();
+    stopWatch.Start();
     var booksWithAggregatesByCategory = bookService.UseAnonymousToGroupBooksWithAggregatesByCategory();
     foreach (var bookGroup in booksWithAggregatesByCategory)
     {
         Console.WriteLine($"Anonymous Type Group : {bookGroup} ");
     }
-    
+    Console.WriteLine($"Time Spent: {stopWatch.ElapsedTicks} ticks");
+    stopWatch.Restart();
     foreach (var valueTuple in bookService.UseValueTuplesToGroupBooksWithAggregatesByCategory())
     {
         Console.WriteLine($"Value Tuple Group: {valueTuple}");
     }
-    
+    Console.WriteLine($"Time Spent: {stopWatch.ElapsedTicks} ticks");
+    stopWatch.Restart();
     foreach (var refTuple in bookService.UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory())
     {
         Console.WriteLine($"Value Tuple Group: {refTuple}");
     }
-
+    Console.WriteLine($"Time Spent: {stopWatch.ElapsedTicks} ticks");
+    stopWatch.Restart();
     Console.WriteLine("Hello, World! I am tuples.");
 }
 
