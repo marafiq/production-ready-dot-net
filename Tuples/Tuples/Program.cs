@@ -25,7 +25,7 @@ unsafe
     stopWatch.Restart();
     foreach (var refTuple in bookService.UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory())
     {
-        Console.WriteLine($"Value Tuple Group: {refTuple}");
+        Console.WriteLine($"Refence Tuple Group: {refTuple}");
     }
     Console.WriteLine($"Time Spent: {stopWatch.ElapsedTicks} ticks");
     stopWatch.Restart();
