@@ -1,6 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-unsafe
+﻿unsafe
 {
     var bookService = new BookService();
     //get me max, min prices of all books belong to a category.
