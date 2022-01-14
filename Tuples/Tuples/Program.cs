@@ -1,9 +1,28 @@
 ﻿using System.Diagnostics;
-
-
+using Spectre.Console;
+Console.WriteLine("Hello, World! I am Tuples.");
 var bookService = new BookService();
 //get me max, min prices of all books belong to a category.
 var thrillerPriceAggregates = bookService.CalculatePriceAggregatesBy(BookCategory.Thriller);
+
+//Notice how we can use properties of tuple by Name hence Named Tuples
+Console.WriteLine(
+    $"{nameof(thrillerPriceAggregates)} is {thrillerPriceAggregates.MaxPrice} {thrillerPriceAggregates.MinPrice}");
+
+//tuples support deconstruction - notice variable does not need to match, and types in inferred 
+var (maxPriceOfBook, minPriceOfBook) = thrillerPriceAggregates;
+Console.WriteLine($"Value Tuple Deconstruction {maxPriceOfBook} {minPriceOfBook}");
+
+//Discard one value but project first value
+var (maxPrice, _) = thrillerPriceAggregates;
+Console.WriteLine($"Value Tuple Deconstruction with discard {maxPrice}");
+
+//Use existing variable and project value on it
+double x = 500.00;
+double y = 100.00;
+(x, y) = thrillerPriceAggregates;
+Console.WriteLine($"Project tuple values on existing variables {x+y}");
+
 unsafe
 {
     var size = sizeof((double, double));
@@ -11,6 +30,10 @@ unsafe
         $"Price aggregates of Thriller are (Max,Min): {thrillerPriceAggregates}  And size of tuple is {size} bytes");
     Console.WriteLine("I have 100 books. Lets measure by using old StopWatch");
 }
+var table = new Table();
+table.Title = new TableTitle("[maroon]Group 1000 Books With Aggregates[/]");
+table.AddColumn("Benchmark Name");
+table.AddColumn("Total Ticks");
 
 var stopWatch = new Stopwatch();
 stopWatch.Start();
@@ -20,28 +43,30 @@ foreach (var bookGroup in booksWithAggregatesByCategory)
     Console.WriteLine($"Anonymous Type Group : {bookGroup} ");
 }
 
-Console.WriteLine($"Time Spent: {stopWatch.ElapsedTicks} ticks");
+table.AddRow("UseAnonymousToGroupBooksWithAggregatesByCategory", stopWatch.ElapsedTicks.ToString());
 stopWatch.Restart();
 foreach (var valueTuple in bookService.UseValueTuplesToGroupBooksWithAggregatesByCategory())
 {
     Console.WriteLine($"Value Tuple Group: {valueTuple}");
 }
 
-Console.WriteLine($"Time Spent: {stopWatch.ElapsedTicks} ticks");
+table.AddRow("UseValueTuplesToGroupBooksWithAggregatesByCategory", stopWatch.ElapsedTicks.ToString());
 stopWatch.Restart();
 foreach (var refTuple in bookService.UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory())
 {
-    Console.WriteLine($"Refence Tuple Group: {refTuple}");
+    Console.WriteLine($"Reference Tuple Group: {refTuple}");
 }
 
-Console.WriteLine($"Time Spent: {stopWatch.ElapsedTicks} ticks");
+table.AddRow("[green]UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory[/]", $"[green]{stopWatch.ElapsedTicks}[/]");
+AnsiConsole.Write(table);
+
 stopWatch.Restart();
-Console.WriteLine("Hello, World! I am tuples.");
+
 
 
 public class BookService
 {
-    private readonly List<Book> _books;
+    private readonly List<Book> _books = new();
 
     public BookService()
     {
@@ -62,7 +87,7 @@ public class BookService
                 var groupedBooks = books.ToList();
                 return new
                 {
-                    Category = category, 
+                    Category = category,
                     MinPrice = groupedBooks.Min(b => b.Price),
                     AvgPrice = groupedBooks.Average(b => b.Price),
                     MaxPrice = groupedBooks.Max(b => b.Price),
@@ -81,7 +106,7 @@ public class BookService
             {
                 var groupedBooks = books.ToList();
                 return (
-                    Category: category, 
+                    Category: category,
                     MinPrice: groupedBooks.Min(b => b.Price),
                     AvgPrice: groupedBooks.Average(b => b.Price),
                     MaxPrice: groupedBooks.Max(b => b.Price),
@@ -100,16 +125,17 @@ public class BookService
             {
                 var groupedBooks = books.ToList();
                 return Tuple.Create(
-                    category, 
+                    category,
                     groupedBooks.Min(b => b.Price),
                     groupedBooks.Average(b => b.Price),
                     groupedBooks.Max(b => b.Price),
                     groupedBooks
                 );
             });
-
+        
         return booksWithAggregatesByCategory;
     }
+    
 
     List<Book> SeedBooks()
     {
@@ -127,11 +153,11 @@ public class BookService
 
 public class Book
 {
-    public string Isbn { get; }
-    public BookCategory BookCategory { get; }
-    public string About { get; }
-    public string AbstractDescription { get; }
-    public double Price { get; }
+    public string Isbn { get; set; }
+    public BookCategory BookCategory { get; set; }
+    public string About { get; set; }
+    public string AbstractDescription { get; set; }
+    public double Price { get; set; }
 
     public Book(string isbn, BookCategory bookCategory, string about, string abstractDescription, double price)
     {
@@ -149,4 +175,24 @@ public enum BookCategory
     Horror,
     Comedy,
     Nerdy
+}
+
+/// <summary>
+/// Common Stats of a Book
+/// </summary>
+struct BookStats
+{
+    public BookStats(int totalChapters, int totalPages)
+    {
+        TotalChapters = totalChapters;
+        TotalPages = totalPages;
+    }
+
+    public int TotalChapters { get; set; }
+    public int TotalPages { get; set; }
+
+    public override string ToString()
+    {
+        return $"{nameof(TotalChapters)}: {TotalChapters}, {nameof(TotalPages)}:{TotalPages}";
+    }
 }
