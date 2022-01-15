@@ -69,6 +69,8 @@ AnsiConsole.Write(table);
 stopWatch.Restart();
 
 BenchmarkRunner.Run<Benchmarks>();
+Console.WriteLine("Press any key, so program can exit.");
+Console.ReadKey();
 
 [MemoryDiagnoser()]
 public class Benchmarks
@@ -95,7 +97,16 @@ public class Benchmarks
         var valueTuple = _bookService.UseValueTuplesToGroupBooksWithAggregatesByCategory();
         valueTuple.Consume(_consumer);
     }
-
+    [Benchmark]
+    public void UseValueTuplesToGroupBooksWithAggregatesByCategoryAndBoxIt()
+    {
+        var valueTuple = _bookService.UseValueTuplesToGroupBooksWithAggregatesByCategory();
+        foreach (var tuple in valueTuple)
+        {
+            object o = tuple;
+            _consumer.Consume(o);
+        }
+    }
     [Benchmark(Baseline = true)]
     public void UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory()
     {
