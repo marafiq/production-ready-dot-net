@@ -1,5 +1,9 @@
 ﻿using System.Diagnostics;
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Engines;
+using BenchmarkDotNet.Running;
 using Spectre.Console;
+
 Console.WriteLine("Hello, World! I am Tuples.");
 var bookService = new BookService();
 //get me max, min prices of all books belong to a category.
@@ -21,7 +25,7 @@ Console.WriteLine($"Value Tuple Deconstruction with discard {maxPrice}");
 double x = 500.00;
 double y = 100.00;
 (x, y) = thrillerPriceAggregates;
-Console.WriteLine($"Project tuple values on existing variables {x+y}");
+Console.WriteLine($"Project tuple values on existing variables {x + y}");
 
 unsafe
 {
@@ -30,6 +34,7 @@ unsafe
         $"Price aggregates of Thriller are (Max,Min): {thrillerPriceAggregates}  And size of tuple is {size} bytes");
     Console.WriteLine("I have 100 books. Lets measure by using old StopWatch");
 }
+
 var table = new Table();
 table.Title = new TableTitle("[maroon]Group 1000 Books With Aggregates[/]");
 table.AddColumn("Benchmark Name");
@@ -57,27 +62,66 @@ foreach (var refTuple in bookService.UseReferenceTypeTuplesToGroupBooksWithAggre
     Console.WriteLine($"Reference Tuple Group: {refTuple}");
 }
 
-table.AddRow("[green]UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory[/]", $"[green]{stopWatch.ElapsedTicks}[/]");
+table.AddRow("[green]UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory[/]",
+    $"[green]{stopWatch.ElapsedTicks}[/]");
 AnsiConsole.Write(table);
 
 stopWatch.Restart();
 
+BenchmarkRunner.Run<Benchmarks>();
 
+[MemoryDiagnoser()]
+public class Benchmarks
+{
+    private readonly Consumer _consumer = new Consumer();
+    private BookService _bookService;
+    private int _sizeOfBooksList = 1000;
+    [GlobalSetup]
+    public void GlobalSetup()
+    {
+        _bookService = new BookService(_sizeOfBooksList);
+    }
+
+    [Benchmark]
+    public void UseAnonymousToGroupBooksWithAggregatesByCategory()
+    {
+        var booksWithAggregatesByCategory = _bookService.UseAnonymousToGroupBooksWithAggregatesByCategory();
+        booksWithAggregatesByCategory.Consume(_consumer);
+    }
+
+    [Benchmark]
+    public void UseValueTuplesToGroupBooksWithAggregatesByCategory()
+    {
+        var valueTuple = _bookService.UseValueTuplesToGroupBooksWithAggregatesByCategory();
+        valueTuple.Consume(_consumer);
+    }
+
+    [Benchmark(Baseline = true)]
+    public void UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory()
+    {
+        var refTuple = _bookService.UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory();
+        refTuple.Consume(_consumer);
+    }
+}
 
 public class BookService
 {
+    private readonly int _sizeOfBooksList;
     private readonly List<Book> _books = new();
 
-    public BookService()
+    public BookService(int sizeOfBooksList = 1000)
     {
+        _sizeOfBooksList = sizeOfBooksList;
         _books = SeedBooks();
     }
+
 
     public (double MaxPrice, double MinPrice) CalculatePriceAggregatesBy(BookCategory bookCategory)
     {
         var categoryBooks = _books.Where(b => b.BookCategory == bookCategory).ToList();
         return (categoryBooks.Max(b => b.Price), categoryBooks.Min(b => b.Price));
     }
+
 
     public IEnumerable<dynamic> UseAnonymousToGroupBooksWithAggregatesByCategory()
     {
@@ -97,6 +141,7 @@ public class BookService
 
         return booksWithAggregatesByCategory;
     }
+
 
     public IEnumerable<(BookCategory Category, double MinPrice, double MaxPrice, double AvgPrice, List<Book> Books)>
         UseValueTuplesToGroupBooksWithAggregatesByCategory()
@@ -132,15 +177,15 @@ public class BookService
                     groupedBooks
                 );
             });
-        
+
         return booksWithAggregatesByCategory;
     }
-    
+
 
     List<Book> SeedBooks()
     {
         List<Book> books = new();
-        for (var i = 0; i < 1000; i++)
+        for (var i = 0; i < _sizeOfBooksList; i++)
         {
             Book book = new($"100-100-{i}", BookCategory.Thriller, "about", "abstract", 100.99 + i);
             books.Add(book);
