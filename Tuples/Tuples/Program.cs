@@ -35,42 +35,91 @@ unsafe
     Console.WriteLine("I have 100 books. Lets measure by using old StopWatch");
 }
 
-var table = new Table();
-table.Title = new TableTitle("[maroon]Group 1000 Books With Aggregates[/]");
-table.AddColumn("Benchmark Name");
-table.AddColumn("Total Ticks");
 
-var stopWatch = new Stopwatch();
-stopWatch.Start();
-var booksWithAggregatesByCategory = bookService.UseAnonymousToGroupBooksWithAggregatesByCategory();
-foreach (var bookGroup in booksWithAggregatesByCategory)
+StopWatchBenchmark stopWatchBenchmark = new();
+AnsiConsole.WriteLine("xx");
+AnsiConsole.Write(new Markup($"[bold yellow]Stopwatch Info: {nameof(Stopwatch.Frequency)} = {Stopwatch.Frequency}, {nameof(Stopwatch.GetTimestamp)} = {Stopwatch.GetTimestamp()}, {nameof(Stopwatch.IsHighResolution)} = {Stopwatch.IsHighResolution}[/] "));
+AnsiConsole.WriteLine();
+
+stopWatchBenchmark.UseAnonymousToGroupBooksWithAggregatesByCategory();
+stopWatchBenchmark.UseValueTuplesToGroupBooksWithAggregatesByCategory();
+stopWatchBenchmark.UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory();
+stopWatchBenchmark.Print();
+
+Console.WriteLine("Do you want to run DotnetBenchmark, then type yes?");
+var input = Console.ReadLine();
+if (input?.Equals("yes", StringComparison.OrdinalIgnoreCase) == true)
 {
-    Console.WriteLine($"Anonymous Type Group : {bookGroup} ");
+    BenchmarkRunner.Run<Benchmarks>();
+    Console.WriteLine("Press any key, so program can exit.");
+    Console.ReadKey();
 }
 
-table.AddRow("UseAnonymousToGroupBooksWithAggregatesByCategory", stopWatch.ElapsedTicks.ToString());
-stopWatch.Restart();
-foreach (var valueTuple in bookService.UseValueTuplesToGroupBooksWithAggregatesByCategory())
+/// <summary>
+/// Benchmark with StopWatch is bad
+/// </summary>
+class StopWatchBenchmark
 {
-    Console.WriteLine($"Value Tuple Group: {valueTuple}");
+    BookService _bookService = new BookService();
+
+    Table _table = new Table();
+
+    public StopWatchBenchmark()
+    {
+        _table.Title = new TableTitle("[maroon]Group 1000 Books With Aggregates[/]");
+        _table.AddColumn("Benchmark Name");
+        _table.AddColumn("Total Ticks");
+    }
+
+
+    public void UseAnonymousToGroupBooksWithAggregatesByCategory()
+    {
+        var stopWatch = Stopwatch.StartNew();
+        var booksWithAggregatesByCategory = _bookService.UseAnonymousToGroupBooksWithAggregatesByCategory();
+        foreach (var bookGroup in booksWithAggregatesByCategory)
+        {
+            Console.WriteLine($"Anonymous Type Group : {bookGroup} ");
+        }
+
+        stopWatch.Stop();
+        AddTableRow("UseAnonymousToGroupBooksWithAggregatesByCategory", stopWatch.ElapsedTicks);
+    }
+
+    public void UseValueTuplesToGroupBooksWithAggregatesByCategory()
+    {
+        var stopWatch = Stopwatch.StartNew();
+        foreach (var valueTuple in _bookService.UseValueTuplesToGroupBooksWithAggregatesByCategory())
+        {
+            Console.WriteLine($"Value Tuple Group: {valueTuple}");
+        }
+
+        stopWatch.Stop();
+        AddTableRow("UseValueTuplesToGroupBooksWithAggregatesByCategory", stopWatch.ElapsedTicks);
+    }
+
+    public void UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory()
+    {
+        var stopWatch = Stopwatch.StartNew();
+        foreach (var refTuple in _bookService.UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory())
+        {
+            Console.WriteLine($"Reference Tuple Group: {refTuple}");
+        }
+
+        stopWatch.Stop();
+        AddTableRow("UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory", stopWatch.ElapsedTicks);
+    }
+
+    private void AddTableRow(string benchmarkName, long elapsedTicks)
+    {
+        _table.AddRow($"[green]{benchmarkName}[/]",
+            $"[green]{elapsedTicks}[/]");
+    }
+
+    public void Print()
+    {
+        AnsiConsole.Write(_table);
+    }
 }
-
-table.AddRow("UseValueTuplesToGroupBooksWithAggregatesByCategory", stopWatch.ElapsedTicks.ToString());
-stopWatch.Restart();
-foreach (var refTuple in bookService.UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory())
-{
-    Console.WriteLine($"Reference Tuple Group: {refTuple}");
-}
-
-table.AddRow("[green]UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory[/]",
-    $"[green]{stopWatch.ElapsedTicks}[/]");
-AnsiConsole.Write(table);
-
-stopWatch.Restart();
-
-BenchmarkRunner.Run<Benchmarks>();
-Console.WriteLine("Press any key, so program can exit.");
-Console.ReadKey();
 
 [MemoryDiagnoser()]
 public class Benchmarks
@@ -78,6 +127,7 @@ public class Benchmarks
     private readonly Consumer _consumer = new Consumer();
     private BookService _bookService;
     private int _sizeOfBooksList = 1000;
+
     [GlobalSetup]
     public void GlobalSetup()
     {
@@ -97,16 +147,19 @@ public class Benchmarks
         var valueTuple = _bookService.UseValueTuplesToGroupBooksWithAggregatesByCategory();
         valueTuple.Consume(_consumer);
     }
+
     [Benchmark]
     public void UseValueTuplesToGroupBooksWithAggregatesByCategoryAndBoxIt()
     {
         var valueTuple = _bookService.UseValueTuplesToGroupBooksWithAggregatesByCategory();
         foreach (var tuple in valueTuple)
         {
-            object o = tuple;
+            object o = tuple.Category;
+            object o1 = tuple.MaxPrice;
             _consumer.Consume(o);
         }
     }
+
     [Benchmark(Baseline = true)]
     public void UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory()
     {
