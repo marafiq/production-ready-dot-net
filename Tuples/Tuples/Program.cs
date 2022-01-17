@@ -61,9 +61,9 @@ if (input?.Equals("yes", StringComparison.OrdinalIgnoreCase) == true)
 /// </summary>
 class StopWatchBenchmark
 {
-    BookService _bookService = new BookService();
+    private readonly BookService _bookService = new();
 
-    Table _table = new Table();
+    private readonly Table _table = new();
 
     public StopWatchBenchmark()
     {
@@ -75,9 +75,6 @@ class StopWatchBenchmark
 
     public void UseAnonymousToGroupBooksWithAggregatesByCategory()
     {
-        
-        
-
         var stopWatch = Stopwatch.StartNew();
         for (int i = 0; i < 10000; i++)
         {
@@ -109,8 +106,6 @@ class StopWatchBenchmark
 
     public void UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory()
     {
-        
-
         var stopWatch = Stopwatch.StartNew();
         for (int i = 0; i < 10000; i++)
         {
@@ -139,10 +134,13 @@ class StopWatchBenchmark
 [MemoryDiagnoser()]
 public class Benchmarks
 {
-    private readonly Consumer _consumer = new Consumer();
+    private readonly Consumer _consumer = new();
+#pragma warning disable CS8618
     private BookService _bookService;
-    private int _sizeOfBooksList = 5000;
 
+    private int _sizeOfBooksList = 5000;
+#pragma warning restore CS8618
+    
     [GlobalSetup]
     public void GlobalSetup()
     {
