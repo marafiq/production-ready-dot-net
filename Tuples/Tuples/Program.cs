@@ -42,9 +42,10 @@ AnsiConsole.Write(new Markup(
     $"[bold yellow]Stopwatch Info: {nameof(Stopwatch.Frequency)} = {Stopwatch.Frequency}, {nameof(Stopwatch.GetTimestamp)} = {Stopwatch.GetTimestamp()}, {nameof(Stopwatch.IsHighResolution)} = {Stopwatch.IsHighResolution}[/] "));
 AnsiConsole.WriteLine();
 
-stopWatchBenchmark.UseAnonymousToGroupBooksWithAggregatesByCategory();
 stopWatchBenchmark.UseValueTuplesToGroupBooksWithAggregatesByCategory();
+stopWatchBenchmark.UseAnonymousToGroupBooksWithAggregatesByCategory();
 stopWatchBenchmark.UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory();
+
 stopWatchBenchmark.Print();
 
 Console.WriteLine("Do you want to run DotnetBenchmark, then type yes?");
@@ -64,7 +65,7 @@ class StopWatchBenchmark
     private readonly BookService _bookService = new();
 
     private readonly Table _table = new();
-
+    private readonly Consumer _consumer = new();
     public StopWatchBenchmark()
     {
         _table.Title = new TableTitle("[maroon]Group 1000 Books With Aggregates[/]");
@@ -81,7 +82,7 @@ class StopWatchBenchmark
             var booksWithAggregatesByCategory = _bookService.UseAnonymousToGroupBooksWithAggregatesByCategory();
             foreach (var bookGroup in booksWithAggregatesByCategory)
             {
-                Console.WriteLine($"Anonymous Type Group : {bookGroup} ");
+                _consumer.Consume(bookGroup);
             }
         }
 
@@ -96,7 +97,7 @@ class StopWatchBenchmark
         {
             foreach (var valueTuple in _bookService.UseValueTuplesToGroupBooksWithAggregatesByCategory())
             {
-                Console.WriteLine($"Value Tuple Group: {valueTuple}");
+                _consumer.Consume(valueTuple);
             }
         }
 
@@ -111,7 +112,7 @@ class StopWatchBenchmark
         {
             foreach (var refTuple in _bookService.UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory())
             {
-                Console.WriteLine($"Reference Tuple Group: {refTuple}");
+                _consumer.Consume(refTuple);
             }
         }
 
