@@ -22,8 +22,8 @@ var (maxPrice, _) = thrillerPriceAggregates;
 Console.WriteLine($"Value Tuple Deconstruction with discard {maxPrice}");
 
 //Use existing variable and project value on it
-double x = 500.00;
-double y = 100.00;
+var x = 500.00;
+var y = 100.00;
 (x, y) = thrillerPriceAggregates;
 Console.WriteLine($"Project tuple values on existing variables {x + y}");
 
@@ -35,6 +35,22 @@ unsafe
     Console.WriteLine("I have 100 books. Lets measure by using old StopWatch");
 }
 
+var adnan = (Name: "Adnan", Age: 40);
+var anotherAdnan = (Name: "Adnan", Age: 40);
+var areTheySame = adnan == anotherAdnan ? "Yes" : "No";
+Console.WriteLine($"Are they same? {areTheySame}");
+//output: Are they same? Yes
+var someoneElse = (FirstName: "Adnan", Age: 40);
+areTheySame = adnan == someoneElse ? "Yes" : "No";
+Console.WriteLine($"Are they same? {areTheySame}");
+//output: Are they same? Yes
+
+/*
+ But why? 
+ Because Named Tuples are syntax sugar. It makes code more readable.
+ Tuples equality is done on Tuple properties, Item1, Item2
+*/
+
 
 StopWatchBenchmark stopWatchBenchmark = new();
 AnsiConsole.WriteLine("xx");
@@ -42,11 +58,14 @@ AnsiConsole.Write(new Markup(
     $"[bold yellow]Stopwatch Info: {nameof(Stopwatch.Frequency)} = {Stopwatch.Frequency}, {nameof(Stopwatch.GetTimestamp)} = {Stopwatch.GetTimestamp()}, {nameof(Stopwatch.IsHighResolution)} = {Stopwatch.IsHighResolution}[/] "));
 AnsiConsole.WriteLine();
 
-stopWatchBenchmark.UseValueTuplesToGroupBooksWithAggregatesByCategory();
-stopWatchBenchmark.UseAnonymousToGroupBooksWithAggregatesByCategory();
-stopWatchBenchmark.UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory();
+for (var i = 0; i < 2; i++)
+{
+    stopWatchBenchmark.UseValueTuplesToGroupBooksWithAggregatesByCategory();
+    stopWatchBenchmark.UseAnonymousToGroupBooksWithAggregatesByCategory();
+    stopWatchBenchmark.UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory();
 
-stopWatchBenchmark.Print();
+    stopWatchBenchmark.Print();
+}
 
 Console.WriteLine("Do you want to run DotnetBenchmark, then type yes?");
 var input = Console.ReadLine();
@@ -58,14 +77,15 @@ if (input?.Equals("yes", StringComparison.OrdinalIgnoreCase) == true)
 }
 
 /// <summary>
-/// Benchmark with StopWatch is bad
+///     Benchmark with StopWatch is bad
 /// </summary>
-class StopWatchBenchmark
+internal class StopWatchBenchmark
 {
     private readonly BookService _bookService = new();
+    private readonly Consumer _consumer = new();
 
     private readonly Table _table = new();
-    private readonly Consumer _consumer = new();
+
     public StopWatchBenchmark()
     {
         _table.Title = new TableTitle("[maroon]Group 1000 Books With Aggregates[/]");
@@ -77,13 +97,10 @@ class StopWatchBenchmark
     public void UseAnonymousToGroupBooksWithAggregatesByCategory()
     {
         var stopWatch = Stopwatch.StartNew();
-        for (int i = 0; i < 10000; i++)
+        for (var i = 0; i < 10000; i++)
         {
             var booksWithAggregatesByCategory = _bookService.UseAnonymousToGroupBooksWithAggregatesByCategory();
-            foreach (var bookGroup in booksWithAggregatesByCategory)
-            {
-                _consumer.Consume(bookGroup);
-            }
+            foreach (var bookGroup in booksWithAggregatesByCategory) _consumer.Consume(bookGroup);
         }
 
         stopWatch.Stop();
@@ -93,13 +110,9 @@ class StopWatchBenchmark
     public void UseValueTuplesToGroupBooksWithAggregatesByCategory()
     {
         var stopWatch = Stopwatch.StartNew();
-        for (int i = 0; i < 10000; i++)
-        {
+        for (var i = 0; i < 10000; i++)
             foreach (var valueTuple in _bookService.UseValueTuplesToGroupBooksWithAggregatesByCategory())
-            {
                 _consumer.Consume(valueTuple);
-            }
-        }
 
         stopWatch.Stop();
         AddTableRow("UseValueTuplesToGroupBooksWithAggregatesByCategory", stopWatch.ElapsedMilliseconds);
@@ -108,13 +121,9 @@ class StopWatchBenchmark
     public void UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory()
     {
         var stopWatch = Stopwatch.StartNew();
-        for (int i = 0; i < 10000; i++)
-        {
+        for (var i = 0; i < 10000; i++)
             foreach (var refTuple in _bookService.UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory())
-            {
                 _consumer.Consume(refTuple);
-            }
-        }
 
         stopWatch.Stop();
         AddTableRow("UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory", stopWatch.ElapsedMilliseconds);
@@ -132,16 +141,11 @@ class StopWatchBenchmark
     }
 }
 
-[MemoryDiagnoser()]
+[MemoryDiagnoser]
 public class Benchmarks
 {
     private readonly Consumer _consumer = new();
-#pragma warning disable CS8618
-    private BookService _bookService;
 
-    private int _sizeOfBooksList = 5000;
-#pragma warning restore CS8618
-    
     [GlobalSetup]
     public void GlobalSetup()
     {
@@ -180,12 +184,17 @@ public class Benchmarks
         var refTuple = _bookService.UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory();
         refTuple.Consume(_consumer);
     }
+#pragma warning disable CS8618
+    private BookService _bookService;
+
+    private readonly int _sizeOfBooksList = 5000;
+#pragma warning restore CS8618
 }
 
 public class BookService
 {
-    private readonly int _sizeOfBooksList;
     private readonly List<Book> _books = new();
+    private readonly int _sizeOfBooksList;
 
     public BookService(int sizeOfBooksList = 1000)
     {
@@ -240,7 +249,7 @@ public class BookService
         return booksWithAggregatesByCategory;
     }
 
-    public IEnumerable<System.Tuple<BookCategory, double, double, double, List<Book>>>
+    public IEnumerable<Tuple<BookCategory, double, double, double, List<Book>>>
         UseReferenceTypeTuplesToGroupBooksWithAggregatesByCategory()
     {
         var booksWithAggregatesByCategory = _books.GroupBy(g => g.BookCategory,
@@ -260,7 +269,7 @@ public class BookService
     }
 
 
-    List<Book> SeedBooks()
+    private List<Book> SeedBooks()
     {
         List<Book> books = new();
         for (var i = 0; i < _sizeOfBooksList; i++)
@@ -276,12 +285,6 @@ public class BookService
 
 public class Book
 {
-    public string Isbn { get; set; }
-    public BookCategory BookCategory { get; set; }
-    public string About { get; set; }
-    public string AbstractDescription { get; set; }
-    public double Price { get; set; }
-
     public Book(string isbn, BookCategory bookCategory, string about, string abstractDescription, double price)
     {
         Isbn = isbn;
@@ -290,6 +293,12 @@ public class Book
         AbstractDescription = abstractDescription;
         Price = price;
     }
+
+    public string Isbn { get; set; }
+    public BookCategory BookCategory { get; set; }
+    public string About { get; set; }
+    public string AbstractDescription { get; set; }
+    public double Price { get; set; }
 }
 
 public enum BookCategory
@@ -301,9 +310,9 @@ public enum BookCategory
 }
 
 /// <summary>
-/// Common Stats of a Book
+///     Common Stats of a Book
 /// </summary>
-struct BookStats
+internal struct BookStats
 {
     public BookStats(int totalChapters, int totalPages)
     {

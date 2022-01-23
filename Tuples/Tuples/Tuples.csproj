@@ -9,9 +9,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="BenchmarkDotNet" Version="0.13.1" />
-      <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.13.1" />
-      <PackageReference Include="Spectre.Console" Version="0.43.0" />
+        <PackageReference Include="BenchmarkDotNet" Version="0.13.1"/>
+        <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.13.1"/>
+        <PackageReference Include="Spectre.Console" Version="0.43.0"/>
     </ItemGroup>
 
 </Project>
