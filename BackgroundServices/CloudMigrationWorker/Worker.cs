@@ -30,6 +30,7 @@ public class Worker : BackgroundService
             await Task.WhenAll(tasks);
             _logger.LogInformation("Sleeping");
         }
+        
     }
 
     private async Task<int> PrintTaskInfo(int number, Stopwatch stopwatch)
