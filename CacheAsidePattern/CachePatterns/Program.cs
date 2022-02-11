@@ -9,6 +9,8 @@ builder.Services.AddStackExchangeRedisCache(options =>
 
 builder.Services.AddScoped<ReadThroughDistributedCache>();
 builder.Services.AddScoped<StudentCoursesQuery>();
+builder.Services.AddScoped<StudentEnrollCommand>();
+builder.Services.AddHostedService<PrimeCache>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 var app = builder.Build();
@@ -24,8 +26,11 @@ app.UseHttpsRedirection();
 
 var serviceScope = app.Services.CreateScope();
 var studentCoursesQuery = serviceScope.ServiceProvider.GetService<StudentCoursesQuery>();
+var studentEnrollCommand = serviceScope.ServiceProvider.GetService<StudentEnrollCommand>();
 app.MapGet("/students/{studentId}/enrollments",
     async (int studentId) => await studentCoursesQuery!.GetEnrolledCourses(studentId));
+app.MapPost("/students/{studentId}/enrollments/{courseId}",
+    async (int studentId, int courseId) => await studentEnrollCommand!.Enroll(studentId, courseId));
 app.Run();
 
 record Course(int Id, string CourseName);
@@ -46,6 +51,7 @@ class StudentCoursesQuery
 
         IEnumerable<Course> RetrieveFromDataStore()
         {
+            Thread.Sleep(5000); // If item is not cached then response will take 5 seconds
             var courses = new List<Course> { new(1, "CS") };
             return courses.Where(x => x.Id == studentId);
         }
@@ -60,7 +66,7 @@ class ReadThroughDistributedCache
     {
         _distributedCache = distributedCache;
     }
-    
+
     public async Task<T?> GetAsync<T, TUniqueKey>(CacheKey<TUniqueKey> key, Func<T?> retrieveFromDataStore,
         TimeSpan expiredAfter, CancellationToken cancellationToken = default)
     {
@@ -88,7 +94,7 @@ class StudentEnrollCommand
         _distributedCache = distributedCache;
     }
 
-    async Task<bool> Enroll(int studentId, int courseId)
+    public async Task<bool> Enroll(int studentId, int courseId)
     {
         // consider this is database query executing
         await Task.Delay(1000);
@@ -115,3 +121,25 @@ abstract record CacheKey<TUniqueKey>(char Prefix, TUniqueKey UniqueKey, char Pos
 }
 
 record StudentCacheKey(int StudentId) : CacheKey<int>('S', StudentId, 'C');
+
+class PrimeCache : BackgroundService
+{
+    private readonly ILogger<PrimeCache> _primeCacheLogger;
+
+    public PrimeCache(ILogger<PrimeCache> primeCacheLogger)
+    {
+        _primeCacheLogger = primeCacheLogger;
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            // consider this task is priming the cache
+            await Task.Delay(1000, stoppingToken);
+            _primeCacheLogger.LogInformation("Primed the cache!");
+        }
+
+        await Task.Delay(2000, stoppingToken);
+    }
+}
